@@ -1,0 +1,470 @@
+\documentclass[9pt,a4paper]{extarticle}
+\usepackage[top=1cm,bottom=1cm,left=1cm,right=1cm]{geometry}
+\usepackage{amsmath,amssymb,bm}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{mdframed}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{1pt}
+
+\titleformat{\section}{\normalfont\bfseries\small\color{blue!70!black}}{}{0em}{}[\titlerule]
+\titleformat{\subsection}{\normalfont\bfseries\footnotesize}{}{0em}{}
+\titlespacing{\section}{0pt}{4pt}{2pt}
+\titlespacing{\subsection}{0pt}{3pt}{1pt}
+
+\newcommand{\N}{\mathcal{N}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\KL}{\mathrm{KL}}
+\newcommand{\tr}{\mathrm{tr}}
+\newcommand{\diag}{\mathrm{diag}}
+\newcommand{\softmax}{\mathrm{softmax}}
+\renewcommand{\vec}[1]{\bm{#1}}
+
+\begin{document}
+
+{\centering\bfseries\normalsize 02477 Bayesian ML — Formula Sheet\par}
+\vspace{4pt}
+
+%% ═══════════════════════════════════════════════════════
+\section{Week 1 — Fundamentals \& Beta-Binomial}
+
+\textbf{Bayes' theorem}
+\[
+p(\vec{\theta}|\vec{y}) = \frac{p(\vec{y}|\vec{\theta})\,p(\vec{\theta})}{p(\vec{y})}
+\]
+
+\textbf{Marginal likelihood}
+\[
+p(\vec{y}) = \int p(\vec{y}|\vec{\theta})\,p(\vec{\theta})\,d\vec{\theta}
+\]
+
+\textbf{Beta distribution} $\theta \sim \mathrm{Beta}(a,b)$
+\[
+p(\theta) = \frac{\theta^{a-1}(1-\theta)^{b-1}}{B(a,b)},\quad B(a,b)=\frac{\Gamma(a)\Gamma(b)}{\Gamma(a+b)}
+\]
+\begin{itemize}[noitemsep,topsep=0pt,leftmargin=*]
+  \item Mean: $\frac{a}{a+b}$\quad Mode: $\frac{a-1}{a+b-2}$\quad Var: $\frac{ab}{(a+b)^2(a+b+1)}$
+\end{itemize}
+
+\textbf{Beta-Binomial conjugate update}
+\[
+\text{Prior: }\theta\sim\mathrm{Beta}(a,b)\quad
+\text{Data: }y\sim\mathrm{Bin}(N,\theta)
+\]
+\[
+\Rightarrow\quad \theta|y \sim \mathrm{Beta}(a+y,\; b+N-y)
+\]
+
+\textbf{Log marginal likelihood}
+\[
+\log p(y) = \log B(a+y,b+N-y) - \log B(a,b)
+\]
+
+%% ═══════════════════════════════════════════════════════
+\section{Week 2 — Grid Approx \& Logistic Reg}
+
+\textbf{Sigmoid / logistic}
+\[
+\sigma(a) = \frac{1}{1+e^{-a}},\quad \sigma'(a)=\sigma(a)(1-\sigma(a))
+\]
+
+\textbf{Binary logistic regression}
+\begin{align*}
+p(y_n|w,x_n) &= \sigma(w^\top x_n)^{y_n}(1-\sigma(w^\top x_n))^{1-y_n}
+\end{align*}
+
+\textbf{Log joint (with Gaussian prior $w\sim\N(0,\alpha^{-1}I)$)}
+\[
+\log p(w|y) \propto \sum_n \log p(y_n|w,x_n) - \tfrac{\alpha}{2}\|w\|^2
+\]
+
+\textbf{Gradient \& Hessian of log joint}
+\begin{align*}
+\nabla_w\log p(w|y) &= X^\top(y-\vec{p}) - \alpha w \\
+H &= -X^\top\diag(\vec{p}\odot(1-\vec{p}))X - \alpha I
+\end{align*}
+where $p_n = \sigma(w^\top x_n)$.
+
+\textbf{Grid normalisation}
+\[
+\pi_{ij} = \frac{e^{\log p(\theta_i,\theta_j|\vec{y})}}{\sum_{k,l} e^{\log p(\theta_k,\theta_l|\vec{y})}}
+\]
+
+%% ═══════════════════════════════════════════════════════
+\section{Week 3 — Bayesian Linear Regression}
+
+\textbf{Model}
+\[
+p(\vec{y}|w,\Phi,\beta) = \N(\vec{y}|\Phi w,\beta^{-1}I),\quad p(w|\alpha)=\N(w|0,\alpha^{-1}I)
+\]
+
+\textbf{Posterior} (exact, conjugate)
+\begin{align*}
+p(w|\vec{y}) &= \N(w|\vec{m}_N,S_N) \\
+S_N &= (\alpha I + \beta\Phi^\top\Phi)^{-1} \\
+\vec{m}_N &= \beta S_N \Phi^\top \vec{y}
+\end{align*}
+
+\textbf{Posterior predictive}
+\[
+p(y^*|x^*,\vec{y}) = \N(y^*|\vec{m}_N^\top\phi^*,\;\sigma^2_N(x^*))
+\]
+\[
+\sigma^2_N(x^*) = \beta^{-1} + (\phi^*)^\top S_N \phi^*
+\]
+
+\textbf{Log marginal likelihood}
+\[
+\log p(\vec{y}|\alpha,\beta) = \frac{D}{2}\log\alpha + \frac{N}{2}\log\beta - \frac{N}{2}\log(2\pi)
+\]
+\[
+- \frac{\beta}{2}\|\vec{y}-\Phi\vec{m}_N\|^2 - \frac{\alpha}{2}\vec{m}_N^\top\vec{m}_N + \frac{1}{2}\log|S_N|
+\]
+
+\textbf{MLE (normal equations)}
+\[
+w_\text{MLE} = (\Phi^\top\Phi)^{-1}\Phi^\top \vec{y}
+\]
+
+\textbf{MAP}
+\[
+w_\text{MAP} = (\alpha I + \beta\Phi^\top\Phi)^{-1}\beta\Phi^\top\vec{y} = \vec{m}_N
+\]
+
+\textbf{Linear Gaussian systems} — given $y=Ax+b+n$, $n\sim\N(0,\Sigma_n)$:
+\[
+p(y|x) = \N(y|Ax+b,\Sigma_n)
+\]
+\textit{Joint then condition:} $p(x,y)$ is joint Gaussian; use standard conditioning formulas.
+
+\textbf{Marginal / conditional of Gaussian}
+\[
+p\!\begin{pmatrix}x\\y\end{pmatrix}=\N\!\left(\begin{pmatrix}\mu_x\\\mu_y\end{pmatrix},\begin{pmatrix}\Sigma_{xx}&\Sigma_{xy}\\\Sigma_{yx}&\Sigma_{yy}\end{pmatrix}\right)
+\]
+\[
+p(x|y)=\N(x|\mu_x+\Sigma_{xy}\Sigma_{yy}^{-1}(y-\mu_y),\;\Sigma_{xx}-\Sigma_{xy}\Sigma_{yy}^{-1}\Sigma_{yx})
+\]
+
+%% ═══════════════════════════════════════════════════════
+\section{Week 4 — Laplace Approximation}
+
+\textbf{MAP estimation}
+\[
+w^* = \arg\max_w \log p(w|\vec{y})
+\]
+
+\textbf{Laplace approximation}
+\[
+q(w) = \N(w|w^*,\,\Lambda^{-1}), \quad \Lambda = -\nabla^2\log p(w^*|\vec{y})
+\]
+
+\textbf{Posterior predictive approximations}
+
+\textit{Plug-in:}
+\[
+p(y^*=1|x^*,\vec{y}) \approx \sigma({w^*}^\top x^*)
+\]
+
+\textit{Probit approximation:} ($\kappa^2={\phi^*}^\top\Lambda^{-1}\phi^*$)
+\[
+p(y^*=1|x^*,\vec{y}) \approx \sigma\!\left(\frac{\mu_{f^*}}{\sqrt{1+\pi\sigma^2_{f^*}/8}}\right)
+\]
+where $\mu_{f^*}={w^*}^\top x^*$, $\sigma^2_{f^*}={x^*}^\top\Lambda^{-1}x^*$.
+
+\textit{Monte Carlo:}
+\[
+p(y^*=1|x^*,\vec{y}) \approx \frac{1}{S}\sum_s \sigma({w^{(s)}}^\top x^*),\quad w^{(s)}\sim q(w)
+\]
+
+\textbf{Classification metrics}
+\[
+\text{Accuracy} = \frac{1}{N}\sum_n\mathbf{1}[\hat{y}_n=y_n]
+\]
+\[
+\text{ELPD} = \frac{1}{N}\sum_n\log p(y_n|\vec{y}_{-n},x_n) \approx \frac{1}{N}\sum_n\log\hat{p}_n^{y_n}(1-\hat{p}_n)^{1-y_n}
+\]
+
+%% ═══════════════════════════════════════════════════════
+\section{Week 5 — Gaussian Process Regression}
+
+\textbf{GP prior} $f\sim\mathrm{GP}(m(\cdot),k(\cdot,\cdot))$
+\[
+\vec{f}\sim\N(0,K),\quad K_{ij}=k(x_i,x_j)
+\]
+
+\textbf{Kernels} ($r=\|x-x'\|$, $\ell$ lengthscale, $\kappa^2$ magnitude)
+
+\begin{tabular}{@{}ll@{}}
+SE: & $\kappa^2\exp\!\left(-\tfrac{r^2}{2\ell^2}\right)$ \\
+Mat\'ern $\tfrac{1}{2}$: & $\kappa^2\exp\!\left(-\tfrac{r}{\ell}\right)$ \\
+Mat\'ern $\tfrac{3}{2}$: & $\kappa^2\!\left(1+\tfrac{\sqrt{3}r}{\ell}\right)\exp\!\left(-\tfrac{\sqrt{3}r}{\ell}\right)$
+\end{tabular}
+
+\textbf{GP posterior} (noise $\sigma^2$)
+\begin{align*}
+\vec{k}_* &= [k(x^*,x_1),\ldots,k(x^*,x_N)]^\top \\
+\mu_{f^*} &= \vec{k}_*^\top(K+\sigma^2 I)^{-1}\vec{y} \\
+\sigma^2_{f^*} &= k(x^*,x^*) - \vec{k}_*^\top(K+\sigma^2 I)^{-1}\vec{k}_*
+\end{align*}
+
+\textbf{GP posterior predictive} (with obs.\ noise)
+\[
+p(y^*|\vec{y},x^*) = \N(y^*|\mu_{f^*},\;\sigma^2_{f^*}+\sigma^2)
+\]
+
+\textbf{Log marginal likelihood}
+\[
+\log p(\vec{y}|\vec{x},\kappa,\ell,\sigma) = -\tfrac{1}{2}\vec{y}^\top C^{-1}\vec{y} -\tfrac{1}{2}\log|C| - \tfrac{N}{2}\log(2\pi)
+\]
+where $C = K+\sigma^2 I$.
+
+%% ═══════════════════════════════════════════════════════
+\section{Week 6 — GP Classification}
+
+\textbf{Bernoulli likelihood}
+\[
+p(y_n|f_n)=\sigma(f_n)^{y_n}(1-\sigma(f_n))^{1-y_n}
+\]
+
+\textbf{Laplace approximation on GP}
+\[
+q(\vec{f}) = \N(\vec{f}|\hat{\vec{f}},\,(K^{-1}+W)^{-1})
+\]
+where $\hat{\vec{f}}=\arg\max\log p(\vec{f}|\vec{y})$ and $W=-\nabla^2\log p(\vec{y}|\vec{f})|_{\hat{f}}=\diag(\hat{p}_n(1-\hat{p}_n))$.
+
+\textbf{Woodbury-stable form}
+\[
+(K^{-1}+W)^{-1} = K - KW^{1/2}(I+W^{1/2}KW^{1/2})^{-1}W^{1/2}K
+\]
+
+\textbf{Predictive posterior}
+\[
+\mu_{f^*} = \vec{k}_*^\top(K+W^{-1})^{-1}\vec{y}_\text{eff},\quad
+\sigma^2_{f^*} = k_{**} - \vec{k}_*^\top(K+W^{-1})^{-1}\vec{k}_*
+\]
+
+\textbf{Probit approximation (binary)}
+\[
+p(y^*=1|\vec{y},x^*) \approx \sigma\!\left(\frac{\mu_{f^*}}{\sqrt{1+\pi\sigma^2_{f^*}/8}}\right)
+\]
+
+%% ═══════════════════════════════════════════════════════
+\section{Week 7 — Multi-class \& Decision Theory}
+
+\textbf{Softmax}
+\[
+p(y=k|\vec{f}) = \frac{e^{f_k}}{\sum_j e^{f_j}},\quad \vec{f}=W\phi(x)
+\]
+
+\textbf{Entropy}
+\[
+H[p] = -\sum_k p_k\log p_k \geq 0
+\]
+
+\textbf{Expected utility}
+\[
+a^* = \arg\max_a \sum_y p(y|x,\vec{D})\,U(a,y)
+\]
+For 0-1 loss $U(a,y)=\mathbf{1}[a=y]$: $a^*=\arg\max_k p(y=k|x,\vec{D})$.
+
+\textbf{Aleatoric vs.\ epistemic uncertainty}
+\[
+\mathbb{V}[y] = \underbrace{\E_\theta[\mathbb{V}[y|\theta]]}_{\text{aleatoric}} + \underbrace{\mathbb{V}_\theta[\E[y|\theta]]}_{\text{epistemic}}
+\]
+
+%% ═══════════════════════════════════════════════════════
+\section{Week 8 — Variational Inference}
+
+\textbf{ELBO}
+\[
+\mathcal{L}(q) = \E_q[\log p(\vec{y},w)] - \E_q[\log q(w)] = \log p(\vec{y}) - \KL[q\|p]
+\]
+
+\textbf{Mean-field Gaussian} $q(w)=\N(w|\vec{m},\diag(\vec{v}))$
+
+\textit{Entropy:}
+\[
+H[q] = \tfrac{1}{2}\sum_d\log(2\pi e\, v_d)
+\]
+
+\textit{ELBO gradient} via reparameterisation $w=\vec{m}+\sqrt{\vec{v}}\odot\epsilon$, $\epsilon\sim\N(0,I)$:
+\[
+\nabla_\lambda\mathcal{L} = \nabla_\lambda\E_{\epsilon}[\log p(\vec{y},\vec{m}+\sqrt{\vec{v}}\odot\epsilon)] + \nabla_\lambda H[q]
+\]
+
+\textbf{Analytical ELBO for linear Gaussian} ($\vec{y}=X w+\epsilon$, $\epsilon\sim\N(0,\sigma^2 I)$, $w\sim\N(0,\kappa^2 I)$):
+\begin{align*}
+\mathcal{L} &= \underbrace{-\tfrac{1}{2\sigma^2}\|y-X\vec{m}\|^2 - \tfrac{1}{2\sigma^2}\tr(X\diag(\vec{v})X^\top)}_{\E[\log p(y|w)]} \\
+&\quad+\underbrace{-\tfrac{1}{2\kappa^2}(\|\vec{m}\|^2+\sum_d v_d)}_{\E[\log p(w)]}+H[q]
+\end{align*}
+
+\textbf{KL between Gaussians}
+\[
+\KL[\N(\mu_1,\Sigma_1)\|\N(\mu_2,\Sigma_2)] = \tfrac{1}{2}\!\left[\log\tfrac{|\Sigma_2|}{|\Sigma_1|}-d+\tr(\Sigma_2^{-1}\Sigma_1)+(\mu_1-\mu_2)^\top\Sigma_2^{-1}(\mu_1-\mu_2)\right]
+\]
+
+%% ═══════════════════════════════════════════════════════
+\section{Week 9 — Hamiltonian Monte Carlo}
+
+\textbf{Hamiltonian}
+\[
+H(\theta,\nu) = U(\theta)+K(\nu),\quad U(\theta)=-\log p(\theta|\vec{y}),\quad K(\nu)=\tfrac{1}{2}\nu^\top\nu
+\]
+
+\textbf{Leapfrog step} (step size $\eta$, $L$ steps):
+\begin{align*}
+\nu_{t+\frac{1}{2}} &= \nu_t - \tfrac{\eta}{2}\nabla U(\theta_t)\\
+\theta_{t+1} &= \theta_t + \eta\,\nu_{t+\frac{1}{2}}\\
+\nu_{t+1} &= \nu_{t+\frac{1}{2}} - \tfrac{\eta}{2}\nabla U(\theta_{t+1})
+\end{align*}
+
+\textbf{Accept/reject}
+\[
+\alpha = \min\!\left(1,\exp(H(\theta_t,\nu_t)-H(\theta^*,\nu^*))\right)
+\]
+
+\textbf{Gelman-Rubin $\hat{R}$} (want $<1.01$):
+\[
+\hat{R} = \sqrt{\frac{\hat{V}}{W}},\quad \hat{V}=\frac{n-1}{n}W + \frac{B}{n},\quad B=\frac{n}{m-1}\sum_j(\bar{\theta}_j-\bar{\theta})^2
+\]
+
+\textbf{Effective sample size}
+\[
+\text{ESS} = \frac{S}{1+2\sum_{\tau=1}^\infty \rho_\tau}
+\]
+where $\rho_\tau$ is the lag-$\tau$ autocorrelation.
+
+\textbf{Metropolis-Hastings} (proposal $q(\theta'|\theta)$):
+\[
+\alpha = \min\!\left(1,\frac{p(\theta'|\vec{y})\,q(\theta|\theta')}{p(\theta|\vec{y})\,q(\theta'|\theta)}\right)
+\]
+Symmetric proposal (random walk): $\alpha=\min(1,p(\theta'|\vec{y})/p(\theta|\vec{y}))$.
+
+%% ═══════════════════════════════════════════════════════
+\section{Week 10 — Variational GMM}
+
+\textbf{Generative model}
+\begin{align*}
+\pi &\sim \mathrm{Dir}(\alpha_0\mathbf{1}) \\
+\Lambda_k &\sim \mathrm{Wishart}(W_0,\nu_0) \\
+\mu_k|\Lambda_k &\sim \N(\vec{m}_0,(\beta_0\Lambda_k)^{-1}) \\
+z_n|\pi &\sim \mathrm{Cat}(\pi) \\
+x_n|z_n,\mu,\Lambda &\sim \N(\mu_{z_n},\Lambda_{z_n}^{-1})
+\end{align*}
+
+\textbf{Variational family} (mean-field)
+\[
+q(Z,\pi,\mu,\Lambda)=q(Z)\,q(\pi)\prod_k q(\mu_k,\Lambda_k)
+\]
+
+\textbf{Responsibilities (E-step)}
+\[
+r_{nk} \propto \exp(\E[\log\pi_k]+\tfrac{1}{2}\E[\log|\Lambda_k|]-\tfrac{D}{2}\log(2\pi)-\tfrac{1}{2}\E_{\mu_k,\Lambda_k}[(x_n-\mu_k)^\top\Lambda_k(x_n-\mu_k)])
+\]
+
+\textbf{Dirichlet statistics}
+\[
+\E[\log\pi_k]=\psi(\alpha_k)-\psi\!\left(\sum_j\alpha_j\right),\quad\alpha_k=\alpha_0+N_k,\quad N_k=\sum_n r_{nk}
+\]
+
+%% ═══════════════════════════════════════════════════════
+\section{Week 11 — Black-Box VI (BBVI)}
+
+\textbf{Reparameterisation trick}
+\[
+w = \vec{m} + \sqrt{\vec{v}}\odot\epsilon,\quad \epsilon\sim\N(0,I)
+\]
+\[
+\mathcal{L}(\lambda) \approx \frac{1}{S}\sum_s\log p(\vec{y},w^{(s)}) + H[q]
+\]
+
+\textbf{Robust likelihood}
+\[
+p(y|w,x) = (1-\epsilon_0)\,\mathrm{Ber}(y|\sigma(w^\top x)) + \epsilon_0\,\mathrm{Ber}(y|\sigma(-w^\top x))
+\]
+
+\textbf{Probit likelihood}
+\[
+p(y=1|w,x) = \Phi(w^\top x),\quad \Phi(t)=\int_{-\infty}^t\N(s|0,1)ds
+\]
+
+%% ═══════════════════════════════════════════════════════
+\section{Week 12 — Bayesian Neural Networks}
+
+\textbf{Architecture}
+\[
+h_l = \tanh(W_l h_{l-1}+b_l),\quad \hat{y} = W_L h_{L-1}+b_L
+\]
+
+\textbf{Gaussian likelihood (regression)}
+\[
+p(\vec{y}|w,X) = \N(\vec{y}|\hat{y}(X,w),\sigma^2_n I)
+\]
+
+\textbf{Log joint}
+\[
+\log p(w|\vec{y}) \propto \underbrace{-\tfrac{1}{2\sigma^2_n}\|\vec{y}-\hat{y}(X,w)\|^2}_{\log\text{-lik}} \underbrace{-\tfrac{1}{2\sigma^2_w}\|w\|^2}_{\log\text{-prior}}
+\]
+
+\textbf{MAP training} (=L2-regularised training): optimise $\log p(w|\vec{y})$ with Adam.
+
+%% ═══════════════════════════════════════════════════════
+\section{Key Distributions \& Facts}
+
+\textbf{Gaussian} $\N(x|\mu,\sigma^2)$
+\[
+\log p = -\tfrac{1}{2}\log(2\pi\sigma^2) - \tfrac{(x-\mu)^2}{2\sigma^2}
+\]
+$H = \tfrac{1}{2}\log(2\pi e\sigma^2)$.
+
+\textbf{Multivariate Gaussian} $\N(x|\mu,\Sigma)$
+\[
+\log p = -\tfrac{D}{2}\log(2\pi)-\tfrac{1}{2}\log|\Sigma|-\tfrac{1}{2}(x-\mu)^\top\Sigma^{-1}(x-\mu)
+\]
+
+\textbf{Bernoulli} $y\sim\mathrm{Ber}(\theta)$: $\log p=y\log\theta+(1-y)\log(1-\theta)$.
+
+\textbf{Categorical} $y\sim\mathrm{Cat}(\pi)$: $p(y=k)=\pi_k$.
+
+\textbf{Poisson} $y\sim\mathrm{Pois}(\mu)$: $\log p = y\log\mu - \mu - \log y!$
+
+\textbf{Dirichlet} $\pi\sim\mathrm{Dir}(\alpha)$: $p(\pi)\propto\prod_k\pi_k^{\alpha_k-1}$.
+
+\textbf{Woodbury identity}
+\[
+(A+UCV)^{-1}=A^{-1}-A^{-1}U(C^{-1}+VA^{-1}U)^{-1}VA^{-1}
+\]
+
+\textbf{Matrix det.\ lemma}
+\[
+|A+UCV|=|C^{-1}+VA^{-1}U|\cdot|C|\cdot|A|
+\]
+
+\textbf{Credibility interval}: For $\theta\sim\N(\mu,\sigma^2)$, 95\% CI $\approx\mu\pm 1.96\sigma$.
+
+\textbf{Posterior predictive} (general)
+\[
+p(y^*|\vec{y}) = \int p(y^*|\theta)\,p(\theta|\vec{y})\,d\theta
+\]
+
+\textbf{Ancestral sampling}: draw $\theta^{(s)}\sim p(\theta|\vec{y})$, then $y^{(s)}\sim p(y^*|\theta^{(s)})$.
+
+%% ═══════════════════════════════════════════════════════
+\section{Exam Quick Tips}
+
+\begin{itemize}[noitemsep,topsep=0pt,leftmargin=*]
+  \item \textbf{Prior predictive}: no data yet, integrate prior over $\theta$.
+  \item \textbf{Posterior predictive}: use fitted posterior $p(\theta|\vec{y})$.
+  \item \textbf{GP prior predictive}: $p(y^*|x^*)=\N(0,k(x^*,x^*)+\sigma^2)$.
+  \item \textbf{Laplace is always around MAP}: find $w^*$ first, then $H=-\nabla^2\log p|_{w^*}$.
+  \item \textbf{Probit vs.\ plug-in}: probit $\approx$ accounts for posterior uncertainty; plug-in ignores it.
+  \item \textbf{ELBO $\leq$ log evidence}: equality iff $q=p(\cdot|\vec{y})$.
+  \item \textbf{Mean-field KL}: $\KL[q(w_1)q(w_2)\|p(w_1,w_2)] \geq \KL[q(w_1,w_2)\|p(w_1,w_2)]$.
+  \item \textbf{Higher $\alpha$} (prior precision) $\Rightarrow$ weights shrink toward 0, less overfitting.
+  \item \textbf{Softmax argmax} $=$ argmax of $f_k$ (no need to exponentiate).
+\end{itemize}
+
+\end{document}
